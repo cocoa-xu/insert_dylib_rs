@@ -307,7 +307,7 @@ fn check_load_commands(
                         if linkedit_fileoff + linkedit_filesize != *slice_size {
                             println!("Warning: __LINKEDIT segment is not at the end of the file, so codesign will not work on the patched binary.");
                         } else if (cmd.dataoff + cmd.datasize) as u64 != *slice_size {
-                                println!("Warning: Codesignature is not at the end of __LINKEDIT segment, so codesign will not work on the patched binary.");
+                            println!("Warning: Codesignature is not at the end of __LINKEDIT segment, so codesign will not work on the patched binary.");
                         } else {
                             *slice_size -= cmd.datasize as u64;
 
@@ -317,12 +317,10 @@ fn check_load_commands(
                                 binary_file.seek(SeekFrom::Start(symtab_pos as u64))?;
                                 let mut symtab_command_buffer = [0u8; 24];
                                 binary_file.fpeek(&mut symtab_command_buffer)?;
-                                let mut symtab = SymtabCommand::from(
-                                    symtab_command_buffer,
-                                    is_little_endian,
-                                );
-                                let diffsize = (symtab.stroff + symtab.strsize) as i64
-                                    - (*slice_size as i64);
+                                let mut symtab =
+                                    SymtabCommand::from(symtab_command_buffer, is_little_endian);
+                                let diffsize =
+                                    (symtab.stroff + symtab.strsize) as i64 - (*slice_size as i64);
                                 if (-16..=0).contains(&diffsize) {
                                     symtab.strsize =
                                         ((symtab.strsize as i32) - (diffsize as i32)) as u32;
@@ -390,7 +388,12 @@ fn check_load_commands(
                 let dylib_name_max_index = lc.cmdsize as usize;
                 let mut dylib_name_end = 0;
 
-                for (index, buf) in dylib_name_buffer.iter().enumerate().take(dylib_name_max_index).skip(dylib_name_start) {
+                for (index, buf) in dylib_name_buffer
+                    .iter()
+                    .enumerate()
+                    .take(dylib_name_max_index)
+                    .skip(dylib_name_start)
+                {
                     if *buf == 0 {
                         dylib_name_end = index;
                         break;
