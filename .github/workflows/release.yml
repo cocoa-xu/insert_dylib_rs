@@ -1,0 +1,56 @@
+name: precompile
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build_release:
+    name: ${{ matrix.job.target }}
+    runs-on: ${{ matrix.job.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { target: aarch64-apple-darwin, os: macos-11 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          - { target: x86_64-apple-darwin, os: macos-11 }
+          - { target: x86_64-pc-windows-gnu, os: windows-2022 }
+          - { target: x86_64-pc-windows-msvc, os: windows-2019 }
+          - { target: x86_64-unknown-freebsd, os: ubuntu-22.04, use-cross: true}
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04 }
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add target
+        shell: bash
+        run: |
+          rustup target add ${{ matrix.job.target }}
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: |
+          cargo build --release --target ${{ matrix.job.target }}
+          if [ -n "${{ matrix.job.use-cross }}" ]; then
+            cargo install cross
+            cross build --release --force-non-host --target ${{ matrix.job.target }}
+          fi
+          tar -czf target/insert_dylib_rs-${{ matrix.job.target }}.tar.gz target/${{ matrix.job.target }}/release/insert_dylib_rs
+
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            target/insert_dylib_rs-*.tar.gz
