@@ -43,7 +43,7 @@ jobs:
             cargo install cross
             cross build --release --force-non-host --target ${{ matrix.job.target }}
           fi
-          tar -czf target/insert_dylib_rs-${{ matrix.job.target }}.tar.gz target/${{ matrix.job.target }}/release/insert_dylib_rs
+          tar -czf target/insert_dylib_rs-${{ matrix.job.target }}.tar.gz -C target/${{ matrix.job.target }}/release insert_dylib_rs
 
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
